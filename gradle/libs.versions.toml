@@ -4,7 +4,13 @@
 [versions]
 kotlin-gradle-plugin = "1.9.20"
 jgit = "6.9.0.202403050737-r"
+kotlinx-cli = "0.3.6"
+kotlin-logging = "2.0.11"
+logback = "1.2.6"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
 jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "jgit" }
+kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinx-cli" }
+kotlin-logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "kotlinx-cli" }
+logback = { group = 'ch.qos.logback', name = 'logback-classic', version.ref = "kotlinx-cli" }
