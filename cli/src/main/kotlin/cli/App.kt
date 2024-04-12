@@ -1,12 +1,10 @@
 package cli
 
-import gitparser.LocalGitParser
+import gitparser.external.LocalGitParser
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
-import kotlinx.cli.default
 import kotlinx.cli.required
 import java.io.File
-import java.net.URI
 
 fun main(args: Array<String>) {
     val parser = ArgParser("git-usage-stats")
