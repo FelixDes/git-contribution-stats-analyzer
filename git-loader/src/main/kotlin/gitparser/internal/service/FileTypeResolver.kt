@@ -2,7 +2,7 @@ package gitparser.internal.service
 
 import external.FileType
 
-data object FileTypeResolver {
+object FileTypeResolver {
     fun resolve(filePath: String): FileType {
         // TODO: should be implemented by some external lib/service
         return when {

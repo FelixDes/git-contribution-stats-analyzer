@@ -17,7 +17,7 @@ import java.io.File
 import java.time.ZonedDateTime
 
 
-data object LocalGitParser {
+object LocalGitParser {
     private class DiffCollector : RenameCallback() {
         private val diffs: MutableList<DiffEntry> = mutableListOf()
 
@@ -27,7 +27,8 @@ data object LocalGitParser {
     }
 
     fun parse(dir: File): IndexedDomainDto {
-        val allUsers = mutableMapOf<String, User>()
+        val allUsers = mutableMapOf<Email, User>()
+        val allFiles = mutableMapOf<Path, DomainTreeFileDto>()
 
         val repo = FileRepository(dir)
         val topCommit = RevWalk(repo).parseCommit(repo.resolve(Constants.HEAD))
@@ -39,7 +40,12 @@ data object LocalGitParser {
         config.setBoolean("diff", null, "renames", true)
         val diffConfig = config.get(DiffConfig.KEY)
 
-        val tree = treeWalkToTree(treeWalk) {
+        val tree = treeWalkToTree(
+            treeWalk,
+            processFile = { path: String, file: DomainTreeFileDto ->
+                allFiles.putIfAbsent(Path(path), file)
+            }
+        ) {
             val changes = mutableMapOf<User, MutableList<FileChange>>()
 
             val revWalk = RevWalk(repo)
@@ -54,12 +60,12 @@ data object LocalGitParser {
                 for (commitRev in walk) {
                     val authors = getAuthors(commitRev)
                     authors.forEach {
-                        allUsers.putIfAbsent(it.email, it)
+                        allUsers.putIfAbsent(Email(it.email), it)
                     }
 
                     val fileChange = FileChange(
                         commitMessage = commitRev.fullMessage,
-                        name = commitRev.name,
+                        commitName = commitRev.name,
                         timestamp = ZonedDateTime.ofInstant(
                             commitRev.authorIdent.`when`.toInstant(),
                             commitRev.authorIdent.zoneId
@@ -79,12 +85,14 @@ data object LocalGitParser {
         }
         return IndexedDomainDto(
             tree,
-            allUsers.toMap()
+            allUsers.toMap(),
+            allFiles
         )
     }
 
     private fun treeWalkToTree(
         treeWalk: TreeWalk,
+        processFile: (path: String, file: DomainTreeFileDto) -> Unit,
         findChanges: (path: String) -> Map<User, List<FileChange>>
     ): DomainTreeFolderDto {
         val root = MutableDomainTreeFolderDto("")
@@ -108,6 +116,7 @@ data object LocalGitParser {
                 val filetype = FileTypeResolver.resolve(currentPath)
                 val changes = findChanges(currentPath)
                 val file = DomainTreeFileDto(currentPath, changes, filetype)
+                processFile(currentPath, file)
                 fitStack(stack, currentPath)
                 stack.last().files.add(file)
             }

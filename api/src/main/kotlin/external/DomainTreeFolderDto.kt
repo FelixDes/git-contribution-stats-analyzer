@@ -2,13 +2,17 @@ package external
 
 import java.time.ZonedDateTime
 
+@JvmInline
+value class Path(val path: String)
+
 data class IndexedDomainDto(
     val repositoryTree: DomainTreeFolderDto,
-    val users: Map<String, User>,
+    val users: Map<Email, User>,
+    val files: Map<Path, DomainTreeFileDto>,
 )
 
 data class DomainTreeFolderDto(
-    val path: String,
+    val path: Path,
     val subFolders: List<DomainTreeFolderDto>,
     val files: List<DomainTreeFileDto>,
 )
@@ -16,6 +20,10 @@ data class DomainTreeFolderDto(
 enum class FileType {
     SOURCE, TEST, CONFIG, UNKNOWN
 }
+
+@JvmInline
+value class Email(val email: String)
+
 
 data class User(
     val name: String,
@@ -25,7 +33,7 @@ data class User(
 data class FileChange(
     val timestamp: ZonedDateTime,
     val commitMessage: String,
-    val name: String,
+    val commitName: String,
 )
 
 data class DomainTreeFileDto(
