@@ -2,17 +2,25 @@ package gitparser.internal.dto
 
 import external.DomainTreeFileDto
 import external.DomainTreeFolderDto
+import external.Path
+import external.User
 
 data class MutableDomainTreeFolderDto(
-    val path: String,
-    val subFolders: MutableList<MutableDomainTreeFolderDto> = mutableListOf(),
-    val files: MutableList<DomainTreeFileDto> = mutableListOf(),
+    val path: Path,
+    val subFolders: MutableSet<MutableDomainTreeFolderDto> = mutableSetOf(),
+    val files: MutableSet<DomainTreeFileDto> = mutableSetOf(),
+    val cumulativeUsersChangeFiles: MutableMap<User, Set<Path>> = mutableMapOf(),
 ) {
-    fun toDomainTreeFolderDto(): DomainTreeFolderDto {
-        return DomainTreeFolderDto(
+    fun toDomainTreeFolderDto(
+        processFolder: (folder: DomainTreeFolderDto) -> Unit = {},
+    ): DomainTreeFolderDto {
+        val folder = DomainTreeFolderDto(
             this.path,
-            this.subFolders.map { it.toDomainTreeFolderDto() }.toList(),
-            this.files.toList(),
+            this.subFolders.asSequence().map { it.toDomainTreeFolderDto(processFolder) }.toSet(),
+            this.files.toSet(),
+            this.cumulativeUsersChangeFiles.toMap()
         )
+        processFolder(folder)
+        return folder
     }
 }
