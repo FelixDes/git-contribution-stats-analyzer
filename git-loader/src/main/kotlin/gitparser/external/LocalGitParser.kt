@@ -17,7 +17,7 @@ import java.io.File
 import java.time.ZonedDateTime
 
 
-object LocalGitParser {
+class LocalGitParser {
     private class DiffCollector : RenameCallback() {
         private val diffs: MutableList<DiffEntry> = mutableListOf()
 
@@ -29,6 +29,8 @@ object LocalGitParser {
     fun parse(dir: File): IndexedDomainDto {
         val allUsers = mutableMapOf<Email, User>()
         val allFiles = mutableMapOf<Path, DomainTreeFileDto>()
+        val allFolders = mutableMapOf<Path, DomainTreeFolderDto>()
+        val usersChangeFiles = mutableMapOf<User, MutableSet<Path>>()
 
         val repo = FileRepository(dir)
         val topCommit = RevWalk(repo).parseCommit(repo.resolve(Constants.HEAD))
@@ -42,11 +44,26 @@ object LocalGitParser {
 
         val tree = treeWalkToTree(
             treeWalk,
-            processFile = { path: String, file: DomainTreeFileDto ->
-                allFiles.putIfAbsent(Path(path), file)
-            }
+            // Update indexes
+            processFile = { file: DomainTreeFileDto ->
+                allFiles.putIfAbsent(file.path, file)
+                file.changes.forEach {
+                    allUsers.putIfAbsent(it.key.email, it.key)
+                    usersChangeFiles[it.key] = usersChangeFiles
+                        .getOrDefault(it.key, hashSetOf())
+                        .apply { add(file.path) }
+                }
+            },
+            processFolder = { folder: DomainTreeFolderDto ->
+                allFolders.putIfAbsent(folder.path, folder)
+                folder.cumulativeUsersFilesChanges.forEach {
+                    usersChangeFiles[it.key] = usersChangeFiles
+                        .getOrDefault(it.key, hashSetOf())
+                        .apply { add(folder.path) }
+                }
+            },
         ) {
-            val changes = mutableMapOf<User, MutableList<FileChange>>()
+            val changes = mutableMapOf<User, MutableSet<FileChange>>()
 
             val revWalk = RevWalk(repo)
             val diffCollector = DiffCollector()
@@ -59,21 +76,18 @@ object LocalGitParser {
             revWalk.use { walk ->
                 for (commitRev in walk) {
                     val authors = getAuthors(commitRev)
-                    authors.forEach {
-                        allUsers.putIfAbsent(Email(it.email), it)
-                    }
 
                     val fileChange = FileChange(
-                        commitMessage = commitRev.fullMessage,
                         commitName = commitRev.name,
-                        timestamp = ZonedDateTime.ofInstant(
+                        commitMessage = commitRev.fullMessage,
+                        commitTimestamp = ZonedDateTime.ofInstant(
                             commitRev.authorIdent.`when`.toInstant(),
                             commitRev.authorIdent.zoneId
                         ),
                     )
-                    authors.forEach {
-                        changes[it] = changes
-                            .getOrDefault(it, mutableListOf())
+                    authors.forEach { author ->
+                        changes[author] = changes
+                            .getOrDefault(author, hashSetOf())
                             .apply { add(fileChange) }
                     }
                 }
@@ -86,16 +100,19 @@ object LocalGitParser {
         return IndexedDomainDto(
             tree,
             allUsers.toMap(),
-            allFiles
+            allFiles,
+            allFolders,
+            usersChangeFiles.mapValues { it.value.toSet() }.toMap(),
         )
     }
 
     private fun treeWalkToTree(
         treeWalk: TreeWalk,
-        processFile: (path: String, file: DomainTreeFileDto) -> Unit,
-        findChanges: (path: String) -> Map<User, List<FileChange>>
+        processFile: (file: DomainTreeFileDto) -> Unit,
+        processFolder: (folder: DomainTreeFolderDto) -> Unit,
+        findChanges: (path: String) -> Map<User, Set<FileChange>>
     ): DomainTreeFolderDto {
-        val root = MutableDomainTreeFolderDto("")
+        val root = MutableDomainTreeFolderDto(Path("", isFile = false))
         val stack = ArrayDeque<MutableDomainTreeFolderDto>()
         stack.addLast(root)
 
@@ -103,7 +120,8 @@ object LocalGitParser {
             val currentPath = treeWalk.pathString
 
             if (treeWalk.isSubtree) {
-                val folder = MutableDomainTreeFolderDto(currentPath)
+                val path = Path(currentPath, isFile = false)
+                val folder = MutableDomainTreeFolderDto(path)
 
                 fitStack(stack, currentPath)
 
@@ -113,26 +131,31 @@ object LocalGitParser {
                 treeWalk.enterSubtree()
                 continue
             } else {
+                val path = Path(currentPath, isFile = true)
                 val filetype = FileTypeResolver.resolve(currentPath)
                 val changes = findChanges(currentPath)
-                val file = DomainTreeFileDto(currentPath, changes, filetype)
-                processFile(currentPath, file)
+                val file = DomainTreeFileDto(path, changes, filetype)
+                processFile(file)
                 fitStack(stack, currentPath)
                 stack.last().files.add(file)
             }
         }
 
-        return root.toDomainTreeFolderDto()
+        enrichCumulativeUsersChangeFiles(root)
+
+        return root.toDomainTreeFolderDto(processFolder)
     }
 
+    // Fit stack for a file path
     private fun fitStack(stack: ArrayDeque<MutableDomainTreeFolderDto>, currentPath: String) {
         while (stack.size > 1) {
-            if (currentPath.slice(0..<currentPath.indexOfLast { it == '/' }) != stack.last().path) {
+            if (currentPath.slice(0..<currentPath.indexOfLast { it == '/' }) != stack.last().path.value) {
                 stack.removeLast()
             } else break
         }
     }
 
+    // Find all users that changed files
     private fun getAuthors(commit: RevCommit): Set<User> {
         val result = mutableSetOf<User>()
         val msg = commit.fullMessage
@@ -141,14 +164,44 @@ object LocalGitParser {
                 val split = line.trim().split(" ")
                 val name = split[split.size - 2]
                 val email = split.last().removePrefix("<").removeSuffix(">")
-                result.add(User(name, email))
+                result.add(User(name, Email(email)))
             }
         }
         result.add(
-            User(commit.authorIdent.name, commit.authorIdent.emailAddress)
+            User(commit.authorIdent.name, Email(commit.authorIdent.emailAddress))
         )
 
         return result
+    }
+
+    // Enrich MutableDomainTreeFolderDto with cumulative changes for folders
+    private fun enrichCumulativeUsersChangeFiles(root: MutableDomainTreeFolderDto): MutableDomainTreeFolderDto {
+        // Enrich every folder
+        root.subFolders.forEach(::enrichCumulativeUsersChangeFiles)
+
+        val target = root.cumulativeUsersChangeFiles
+
+        // Process folder's files
+        root.files.forEach { domainTreeFileDto ->
+            domainTreeFileDto.changes.forEach { change ->
+                val key = change.key
+                val existingPlusCurrentFile: MutableSet<Path> = target.getOrDefault(
+                    key, hashSetOf()
+                ).toHashSet().apply { add(domainTreeFileDto.path) }
+
+                target[key] = existingPlusCurrentFile
+            }
+        }
+
+        // Process subfolder
+        root.subFolders.forEach {
+            it.cumulativeUsersChangeFiles.forEach { (key, value) ->
+                target.merge(key, value) { old, new ->
+                    old union new
+                }
+            }
+        }
+        return root
     }
 }
 

@@ -1,5 +1,7 @@
 rootProject.name = "buildSrc"
 
+include(":conventions")
+
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {

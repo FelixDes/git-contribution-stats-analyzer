@@ -17,10 +17,8 @@ object FileTypeResolver {
                 ".ini",
                 ".conf",
                 ".properties",
-                ".properties.yml",
-                ".properties.yaml",
-                "xml",
-                "kts",
+                ".xml",
+                ".kts",
             ).any { filePath.endsWith(it) } -> FileType.CONFIG
 
             else -> FileType.UNKNOWN
