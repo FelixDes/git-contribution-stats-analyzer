@@ -204,6 +204,3 @@ class LocalGitParser {
         return root
     }
 }
-
-
-
