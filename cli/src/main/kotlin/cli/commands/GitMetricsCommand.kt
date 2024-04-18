@@ -9,6 +9,6 @@ abstract class GitMetricsCommand(name: String, help: String) : Subcommand(name, 
     protected val repositoryUrl by argument(
         ArgType.String,
         fullName = "link",
-        description = "Link to git repository"
+        description = "Link to git repository: url or local path"
     )
 }

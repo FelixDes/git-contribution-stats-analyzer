@@ -1,9 +1,6 @@
 package external.service
 
-import external.FileNotFoundInIndexException
-import external.IndexedDomainDto
-import external.Path
-import external.User
+import external.*
 import external.dto.*
 import kotlin.math.min
 
@@ -11,19 +8,6 @@ class GMFPairsMetricsProcessor {
     fun process(
         domain: IndexedDomainDto
     ): GlobalMostFrequentPairsMetricsResponse {
-        if (domain.usersChangeFilesAndFolders.size == 1) {
-            val user = domain.usersChangeFilesAndFolders.keys.first()
-            return GMFUserResponseDto(
-                user,
-                domain.usersChangeFilesAndFolders
-                    .getValue(user)
-                    .asSequence()
-                    .filter { it.isFile }
-                    .map { domain.files[it] ?: throw FileNotFoundInIndexException(it) }
-                    .toHashSet()
-            )
-        }
-
         val source: List<Pair<User, Set<Path>>> = domain.usersChangeFilesAndFolders
             .asSequence()
             .map {
@@ -32,8 +16,13 @@ class GMFPairsMetricsProcessor {
                     .filter { it.isFile }
                     .toSet()
             }
+            .filter { it.second.isNotEmpty() }
             .sortedByDescending { it.second.size }
             .toList()
+
+        if (source.size <= 1) {
+            throw NotEnoughUsersToComputePair()
+        }
 
         val result = hashSetOf<GMFPairMetricDto>()
         var rightBound = source.size
