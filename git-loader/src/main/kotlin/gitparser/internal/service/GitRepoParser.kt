@@ -1,23 +1,20 @@
-package gitparser.external
+package gitparser.internal.service
 
 import external.*
 import gitparser.internal.dto.MutableDomainTreeFolderDto
-import gitparser.internal.service.FileTypeResolver
 import org.eclipse.jgit.diff.DiffConfig
 import org.eclipse.jgit.diff.DiffEntry
-import org.eclipse.jgit.internal.storage.file.FileRepository
 import org.eclipse.jgit.lib.Config
 import org.eclipse.jgit.lib.Constants
+import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.revwalk.FollowFilter
 import org.eclipse.jgit.revwalk.RenameCallback
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.revwalk.RevWalk
 import org.eclipse.jgit.treewalk.TreeWalk
-import java.io.File
 import java.time.ZonedDateTime
 
-
-class LocalGitParser {
+class GitRepoParser {
     private class DiffCollector : RenameCallback() {
         private val diffs: MutableList<DiffEntry> = mutableListOf()
 
@@ -26,13 +23,12 @@ class LocalGitParser {
         }
     }
 
-    fun parse(dir: File): IndexedDomainDto {
+    fun parse(repo: Repository): IndexedDomainDto {
         val allUsers = mutableMapOf<Email, User>()
         val allFiles = mutableMapOf<Path, DomainTreeFileDto>()
         val allFolders = mutableMapOf<Path, DomainTreeFolderDto>()
         val usersChangeFiles = mutableMapOf<User, MutableSet<Path>>()
 
-        val repo = FileRepository(dir)
         val topCommit = RevWalk(repo).parseCommit(repo.resolve(Constants.HEAD))
 
         val treeWalk = TreeWalk(repo)
@@ -204,6 +200,3 @@ class LocalGitParser {
         return root
     }
 }
-
-
-

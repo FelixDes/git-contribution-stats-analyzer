@@ -1,9 +1,6 @@
 package gitparser.internal.dto
 
-import external.DomainTreeFileDto
-import external.DomainTreeFolderDto
-import external.Path
-import external.User
+import external.*
 
 data class MutableDomainTreeFolderDto(
     val path: Path,

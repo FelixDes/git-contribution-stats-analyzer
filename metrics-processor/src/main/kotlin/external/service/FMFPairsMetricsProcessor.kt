@@ -15,6 +15,10 @@ class FMFPairsMetricsProcessor {
 
     // Get all paths to sets (if many pairs have the same wight) of pairs
     private fun getPathsWithContributors(domain: IndexedDomainDto): Map<Path, UserPairsWithWeight> {
+        if (domain.usersChangeFilesAndFolders.size <= 1) {
+            throw NotEnoughUsersToComputePair()
+        }
+
         val source: List<Pair<User, Set<Path>>> = domain.usersChangeFilesAndFolders.toList()
         val pathsWithUsers = mutableMapOf<Path, MutableUserPairsWithWeight>()
 
