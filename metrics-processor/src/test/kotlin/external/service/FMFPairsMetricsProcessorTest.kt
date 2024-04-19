@@ -1,14 +1,12 @@
-
 package external.service
 
 import external.*
-import external.dto.FMFPairsMetricsFileDto
 import external.dto.FMFPairsMetricsFolderDto
 import external.dto.UserPair
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.mockk
 
 class FMFPairsMetricsProcessorTest : FunSpec({
@@ -259,11 +257,10 @@ class FMFPairsMetricsProcessorTest : FunSpec({
         )
 
         val response = service.process(indexedDomain)
-        response shouldBeSameInstanceAs (FMFPairsMetricsFileDto::class)
+        response.shouldBeInstanceOf<FMFPairsMetricsFolderDto>()
         response should {
-            val dto = it as FMFPairsMetricsFolderDto
-            dto.userPairWithCommitCount.userPairs.shouldBe(setOf(UserPair(userA, userB)))
-            dto.userPairWithCommitCount.weight.shouldBe(54)
+            it.userPairWithCommitCount.userPairs.shouldBe(setOf(UserPair(userA, userB)))
+            it.userPairWithCommitCount.weight.shouldBe(54)
         }
     }
 })

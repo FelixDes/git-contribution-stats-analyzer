@@ -3,8 +3,8 @@ package external.service
 import external.*
 import external.dto.GMFPairMetricDto
 import external.dto.GMFPairsMetricsResponseDto
-import external.dto.GMFUserResponseDto
 import external.dto.UserPair
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -41,7 +41,7 @@ class GMFPairsMetricsProcessorTest : FunSpec({
         )
 
         val root = mockk<DomainTreeFolderDto>()
-        every {root.cumulativeUsersFilesChanges} returns hashMapOf(
+        every { root.cumulativeUsersFilesChanges } returns hashMapOf(
             User("u1", Email("u1@u.com")) to hashSetOf(
                 Path("/a", true), Path("/b", true), Path("/c", true)
             ),
@@ -117,22 +117,21 @@ class GMFPairsMetricsProcessorTest : FunSpec({
             )
         )
 
-        service.process(
-            IndexedDomainDto(
-                repositoryTree = root,
-                users = mockk<Map<Email, User>>(),
-                files = files,
-                folders = mockk<Map<Path, DomainTreeFolderDto>>(),
-                usersChangeFilesAndFolders = hashMapOf(
-                    targetUser to hashSetOf(
-                        Path("/a", true),
-                        Path("/b", true)
+        shouldThrow<NotEnoughUsersToComputePair> {
+            service.process(
+                IndexedDomainDto(
+                    repositoryTree = root,
+                    users = mockk<Map<Email, User>>(),
+                    files = files,
+                    folders = mockk<Map<Path, DomainTreeFolderDto>>(),
+                    usersChangeFilesAndFolders = hashMapOf(
+                        targetUser to hashSetOf(
+                            Path("/a", true),
+                            Path("/b", true)
+                        )
                     )
                 )
             )
-        ) shouldBe GMFUserResponseDto(
-            targetUser,
-            files.values.toHashSet()
-        )
+        }
     }
 })

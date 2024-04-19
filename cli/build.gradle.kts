@@ -10,5 +10,5 @@ dependencies {
 }
 
 application {
-    mainClass = "org.example.app.AppKt"
+    mainClass = "cli.AppKt"
 }
