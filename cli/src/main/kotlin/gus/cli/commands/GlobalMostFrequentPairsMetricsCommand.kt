@@ -6,7 +6,7 @@ import kotlinx.cli.default
 data class GlobalMostFrequentPairsMetricsCommand(private val process: (url: String, withChanges: Boolean, full: Boolean) -> Unit) :
     GitMetricsCommand(
         "gmfp",
-        "Calculate the pairs of developers who globally most frequently contribute to the same files/modules"
+        "Calculate the pair of developers who contribute together in the biggest number of files"
     ) {
     private var withChanges by option(
         ArgType.Boolean,
