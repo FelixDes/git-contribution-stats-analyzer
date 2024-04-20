@@ -3,14 +3,14 @@ package gus.external.service
 import gus.external.*
 import gus.external.dto.GMFPairMetricDto
 import gus.external.dto.GMFPairsMetricsResponseDto
-import gus.external.dto.GlobalMostFrequentPairsMetricsResponse
+import gus.external.dto.GloballyMostFrequentPairsMetricsResponse
 import gus.external.dto.UserPair
 import kotlin.math.min
 
 class GMFPairsMetricsProcessor {
     fun process(
         domain: IndexedDomainDto
-    ): GlobalMostFrequentPairsMetricsResponse {
+    ): GloballyMostFrequentPairsMetricsResponse {
         val source: List<Pair<User, Set<Path>>> = domain.usersChangeFilesAndFolders
             .asSequence()
             .map {

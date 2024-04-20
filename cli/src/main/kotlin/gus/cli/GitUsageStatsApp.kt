@@ -1,7 +1,7 @@
 package gus.cli
 
 import gus.cli.commands.FileMostFrequentPairsMetricsCommand
-import gus.cli.commands.GlobalMostFrequentPairsMetricsCommand
+import gus.cli.commands.GloballyMostFrequentPairsMetricsCommand
 import gus.cli.extensions.toCliString
 import gus.external.dto.FMFPairsMetricsFolderDto
 import gus.external.dto.GMFPairsMetricsResponseDto
@@ -20,7 +20,7 @@ class GitUsageStatsApp(
     fun runCLI(args: Array<String>) {
         val parser = ArgParser("GitUsageStats")
 
-        val gmfpCommand = GlobalMostFrequentPairsMetricsCommand { url, withChanges, full ->
+        val gmfpCommand = GloballyMostFrequentPairsMetricsCommand { url, withChanges, full ->
             val indexedDomainDto = gitDomainProcessor.parse(url)
             println()
             when (val gmfpResponse = gmfpProcessor.process(indexedDomainDto)) {

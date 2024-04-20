@@ -3,7 +3,7 @@ package gus.cli.commands
 import kotlinx.cli.ArgType
 import kotlinx.cli.default
 
-data class GlobalMostFrequentPairsMetricsCommand(private val process: (url: String, withChanges: Boolean, full: Boolean) -> Unit) :
+data class GloballyMostFrequentPairsMetricsCommand(private val process: (url: String, withChanges: Boolean, full: Boolean) -> Unit) :
     GitMetricsCommand(
         "gmfp",
         "Calculate the pair of developers who contribute together in the biggest number of files"
