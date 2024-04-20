@@ -10,5 +10,9 @@ dependencies {
 }
 
 application {
-    mainClass = "org.example.app.AppKt"
+    mainClass = "gus.cli.AppKt"
+}
+
+tasks.withType<CreateStartScripts> {
+    applicationName = "GitUsageStats"
 }
