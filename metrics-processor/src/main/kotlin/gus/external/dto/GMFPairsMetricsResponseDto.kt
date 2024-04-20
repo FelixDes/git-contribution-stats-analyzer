@@ -2,11 +2,11 @@ package gus.external.dto
 
 import gus.external.DomainTreeFileDto
 
-sealed interface GlobalMostFrequentPairsMetricsResponse
+sealed interface GloballyMostFrequentPairsMetricsResponse
 
 data class GMFPairsMetricsResponseDto(
     val pairs: Set<GMFPairMetricDto>
-) : GlobalMostFrequentPairsMetricsResponse
+) : GloballyMostFrequentPairsMetricsResponse
 
 data class GMFPairMetricDto(
     val pair: UserPair,
