@@ -12,14 +12,28 @@ Simple CLI tool for collecting metrics from git repository
 
 #### Usage
 
-```
-Usage: GitUsageStats options_list  
-Subcommands:  
-    gmfp - Calculate the pair of developers who contribute together in the biggest number of files
-    fmfp - Calculate the pairs of developers per files/folders who most frequently contribute to the same files/folders
+Grammar (aBNF-like):
 
-Options:
-    --help, -h -> Usage info
+```abnf
+root = bin subcommand_with_options
+
+bin = "./GitUsageStats"; path to startup script
+
+subcommand_with_options = ( fmfp / gmfp ) link [-c] [-f]
+
+link = https://github.com/FelixDes/git-usage-stats.git; URL ends with .git or local absolute path
+```
+
+Examples:
+
+```shell
+./GitUsageStats fmfp https://github.com/FelixDes/colsum.git -c -f
+```
+
+_Note_: default java temp dir `java.io.tmpdir` will be used for repo loading. Can be overwritten with `-Djava.io.tmpdir=/var/tmp`.
+
+```shell
+./GitUsageStats gmfp {absolute path to repos .git folder}
 ```
 
 ## Available metrics

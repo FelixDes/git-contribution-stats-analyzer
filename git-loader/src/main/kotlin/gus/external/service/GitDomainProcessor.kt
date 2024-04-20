@@ -13,7 +13,6 @@ class GitDomainProcessor(
     private val localGitLoader: LocalGitLoader = LocalGitLoader(),
     private val externalGitLoader: ExternalGitLoader = ExternalGitLoader(),
 ) {
-
     fun parse(link: String): IndexedDomainDto {
         return gitParser.parse(
             if (UrlValidator.getInstance().isValid(link)) {
