@@ -50,8 +50,8 @@ class GitUsageStatsApp(
             }
         }
         parser.subcommands(
+            fmfpCommand,
             gmfpCommand,
-            fmfpCommand
         )
         parser.parse(args)
     }

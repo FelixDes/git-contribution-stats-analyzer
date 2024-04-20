@@ -1,15 +1,17 @@
 package gus.internal.service
 
+import gus.external.InvalidRepoLinkException
+import gus.internal.APP_FOLDER_NAME
 import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.lib.Repository
-import gus.external.InvalidRepoLinkException
-import gus.internal.APP_FOLDER_NAME
 import java.io.File
 import java.net.URL
 
-class ExternalGitLoader {
+class ExternalGitLoader(
+    private val repoNameExtractor: RepoNameExtractor = RepoNameExtractor()
+) {
     private val logger = KotlinLogging.logger {}
 
     fun load(
@@ -28,10 +30,8 @@ class ExternalGitLoader {
             appFolder.mkdir()
         }
 
-        val repoName = repoUrl.split("/")
-            .last()
-            .split(".")
-            .first()
+        val repoName = repoNameExtractor.extract(repoUrl)
+
         val repoFolder = File(appFolder, repoName)
 
         val git = if (repoFolder.exists()) {
